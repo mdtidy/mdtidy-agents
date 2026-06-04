@@ -1,0 +1,62 @@
+name: Release
+
+# Changesets-driven release. On push to main it either opens/updates a
+# "Version Packages" PR, or (when that PR merges) publishes @mdtidy/mcp to npm
+# and the MCP Registry. Spec §5.2.
+
+on:
+  push:
+    branches: [main]
+
+concurrency: release
+
+permissions:
+  contents: write # create the version PR + git tags
+  pull-requests: write # open the version PR
+  id-token: write # npm provenance + OIDC trusted publishing
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          registry-url: 'https://registry.npmjs.org'
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+
+      - name: Create Release PR or publish
+        id: changesets
+        uses: changesets/action@v1
+        with:
+          version: pnpm changeset version
+          publish: pnpm release
+          commit: 'chore: version packages'
+          title: 'chore: version packages'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # OIDC trusted publishing (preferred) needs no token — configure the
+          # repo as a trusted publisher for @mdtidy/mcp on npmjs.com (§13).
+          # Until then, set an NPM_TOKEN automation token secret as a fallback:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_CONFIG_PROVENANCE: 'true'
+
+      # Publish server.json to the MCP Registry after npm succeeds. Opt-in via a
+      # repo variable once the `com.mdtidy` namespace is DNS-verified (§13).
+      - name: Publish to MCP Registry
+        if: steps.changesets.outputs.published == 'true' && vars.MCP_REGISTRY_ENABLED == 'true'
+        working-directory: adapters/mcp
+        run: |
+          curl -sSL "https://github.com/modelcontextprotocol/registry/releases/latest/download/mcp-publisher_$(uname -s | tr '[:upper:]' '[:lower:]')_$(uname -m).tar.gz" | tar xz mcp-publisher
+          ./mcp-publisher login dns --domain mdtidy.com --private-key "${{ secrets.MCP_REGISTRY_DNS_KEY }}"
+          ./mcp-publisher publish

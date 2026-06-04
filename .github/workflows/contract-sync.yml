@@ -1,0 +1,59 @@
+name: contract-sync
+
+# Keep the package downstream of the live mdtidy contract (spec §5.3, action f).
+# Pulls openapi.json, regenerates, validates, and opens a drift PR. Independent
+# of the release flow — does NOT gate the /mcp route.
+
+on:
+  schedule:
+    - cron: '0 7 * * *' # daily
+  workflow_dispatch: {}
+  repository_dispatch:
+    types: [openapi-changed] # mdtidy can ping this on deploy
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Fetch the live contract + regenerate
+        run: |
+          pnpm fetch-contract
+          pnpm generate
+
+      # Validate the regen here — PRs opened by GITHUB_TOKEN don't retrigger CI,
+      # so a breaking contract change must fail THIS job (signalling that the
+      # tools/handlers need a human update) rather than landing silently.
+      - run: pnpm typecheck
+      - run: pnpm test
+
+      - name: Open or refresh the drift PR
+        uses: peter-evans/create-pull-request@v6
+        with:
+          branch: chore/openapi-sync
+          title: 'chore: sync OpenAPI contract'
+          commit-message: 'chore: sync OpenAPI contract + regenerate'
+          body: |
+            Automated sync from `https://www.mdtidy.com/openapi.json`.
+
+            Review the tool-surface diff in `docs/tools.md`. If a tool changed
+            shape, confirm the handler in `packages/tools` still matches.
+          add-paths: |
+            contract/openapi.json
+            packages/client/src/generated/**
+            docs/tools.md

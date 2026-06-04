@@ -1,5 +1,5 @@
 ---
-'@mdtidy/mcp': minor
+'@mdtidy/mcp': major
 ---
 
 Initial release of the mdtidy MCP server. Ships the universal stdio + Streamable-HTTP

@@ -18,7 +18,8 @@
     "format:check": "prettier --check .",
     "generate": "tsx scripts/generate.ts",
     "check:generated": "tsx scripts/check-generated.ts",
-    "fetch-contract": "tsx scripts/fetch-contract.ts"
+    "fetch-contract": "tsx scripts/fetch-contract.ts",
+    "release": "pnpm build && changeset publish"
   },
   "devDependencies": {
     "@changesets/cli": "^2.27.9",

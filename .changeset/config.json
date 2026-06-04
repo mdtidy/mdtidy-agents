@@ -7,5 +7,5 @@
   "access": "public",
   "baseBranch": "main",
   "updateInternalDependencies": "patch",
-  "ignore": ["mdtidy-agents", "@mdtidy/client", "@mdtidy/tools", "@mdtidy/mcp-core"]
+  "ignore": ["@mdtidy/client", "@mdtidy/tools", "@mdtidy/mcp-core"]
 }
