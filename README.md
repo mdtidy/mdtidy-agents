@@ -36,7 +36,8 @@ claude mcp add mdtidy --env MDTIDY_API_KEY=mt_live_… -- npx -y @mdtidy/mcp
 ```
 
 **Hosted (nothing to install)** — point any MCP client at
-`https://mdtidy.com/mcp` with header `Authorization: Bearer mt_live_…`.
+`https://www.mdtidy.com/mcp` with header `X-API-KEY: mt_live_…`. (mdtidy
+authenticates with `X-API-KEY`, not `Authorization: Bearer`.)
 
 ## Tools
 
