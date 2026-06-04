@@ -1,28 +1,32 @@
 name: Release
 
-# Changesets-driven release. On push to main it either opens/updates a
-# "Version Packages" PR, or (when that PR merges) publishes @mdtidy/mcp to npm
-# and the MCP Registry. Spec §5.2.
+# Continuous publish: every push to main that touches the package publishes a
+# new @mdtidy/mcp via OIDC trusted publishing. Version = MAJOR.MINOR (from
+# adapters/mcp/package.json) + .<run_number>. Bump MAJOR.MINOR in that
+# package.json to signal a minor/breaking change. Spec §5.2.
 
 on:
   push:
     branches: [main]
+    paths:
+      - 'packages/**'
+      - 'adapters/**'
+      - 'contract/**'
+      - 'pnpm-lock.yaml'
+      - '.github/workflows/release.yml'
 
 concurrency: release
 
 permissions:
-  contents: write # create the version PR + git tags
-  pull-requests: write # open the version PR
-  id-token: write # npm provenance + OIDC trusted publishing
+  contents: write # push the version tag
+  id-token: write # OIDC trusted publishing + provenance
 
 jobs:
-  release:
+  publish:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - uses: pnpm/action-setup@v4
 
@@ -36,30 +40,26 @@ jobs:
       - run: npm install -g npm@latest
 
       - run: pnpm install --frozen-lockfile
-      - run: pnpm build
 
-      - name: Create Release PR or publish
-        id: changesets
-        uses: changesets/action@v1
-        with:
-          version: pnpm changeset version
-          publish: pnpm release
-          commit: 'chore: version packages'
-          title: 'chore: version packages'
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # OIDC trusted publishing is configured for @mdtidy/mcp
-          # (mdtidy/mdtidy-agents → release.yml). No npm token needed — npm
-          # exchanges a short-lived OIDC token at publish time and attaches
-          # provenance automatically. Requires npm >= 11.5.1 (installed above).
-          NPM_CONFIG_PROVENANCE: 'true'
+      - name: Compute version (base MAJOR.MINOR + run number)
+        id: ver
+        run: |
+          base=$(node -p "require('./adapters/mcp/package.json').version.split('.').slice(0,2).join('.')")
+          full="$base.${{ github.run_number }}"
+          echo "version=$full" >> "$GITHUB_OUTPUT"
+          echo "::notice::Publishing @mdtidy/mcp@$full"
 
-      # Publish server.json to the MCP Registry after npm succeeds. Opt-in via a
-      # repo variable once the `com.mdtidy` namespace is DNS-verified (§13).
-      - name: Publish to MCP Registry
-        if: steps.changesets.outputs.published == 'true' && vars.MCP_REGISTRY_ENABLED == 'true'
+      - name: Stamp version + build
         working-directory: adapters/mcp
         run: |
-          curl -sSL "https://github.com/modelcontextprotocol/registry/releases/latest/download/mcp-publisher_$(uname -s | tr '[:upper:]' '[:lower:]')_$(uname -m).tar.gz" | tar xz mcp-publisher
-          ./mcp-publisher login dns --domain mdtidy.com --private-key "${{ secrets.MCP_REGISTRY_DNS_KEY }}"
-          ./mcp-publisher publish
+          npm version "${{ steps.ver.outputs.version }}" --no-git-tag-version
+          pnpm build
+
+      - name: Publish to npm (OIDC + provenance)
+        working-directory: adapters/mcp
+        run: npm publish --provenance --access public
+
+      - name: Tag the source commit
+        run: |
+          git tag "v${{ steps.ver.outputs.version }}"
+          git push origin "v${{ steps.ver.outputs.version }}"

@@ -18,11 +18,9 @@
     "format:check": "prettier --check .",
     "generate": "tsx scripts/generate.ts",
     "check:generated": "tsx scripts/check-generated.ts",
-    "fetch-contract": "tsx scripts/fetch-contract.ts",
-    "release": "pnpm build && changeset publish"
+    "fetch-contract": "tsx scripts/fetch-contract.ts"
   },
   "devDependencies": {
-    "@changesets/cli": "^2.27.9",
     "@eslint/js": "^9.13.0",
     "@types/node": "^22.8.0",
     "eslint": "^9.13.0",

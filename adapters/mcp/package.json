@@ -1,6 +1,6 @@
 {
   "name": "@mdtidy/mcp",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Model Context Protocol server for Markdown Tidy (mdtidy.com) — tidy, convert, save, and share Markdown from any AI agent.",
   "license": "MIT",
   "type": "module",
