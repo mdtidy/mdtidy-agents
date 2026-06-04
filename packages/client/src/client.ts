@@ -8,13 +8,15 @@ import createClient, { type Client, type Middleware } from 'openapi-fetch';
 import { isApiErrorBody, MdtidyApiError } from './errors';
 import type { paths } from './generated/types';
 
-export const DEFAULT_BASE_URL = 'https://mdtidy.com';
+// Canonical host. The apex (mdtidy.com) 307-redirects to www, which breaks
+// server-side self-fetch (the /mcp loopback) — target www directly.
+export const DEFAULT_BASE_URL = 'https://www.mdtidy.com';
 export const DEFAULT_TIMEOUT_MS = 60_000;
 
 export interface MdtidyClientOptions {
   /** mdtidy API key (`mt_live_…` / `mt_test_…`). */
   apiKey: string;
-  /** API origin. Defaults to https://mdtidy.com. */
+  /** API origin. Defaults to https://www.mdtidy.com. */
   baseUrl?: string;
   /** Injectable fetch (tests, in-process loopback). Defaults to global fetch. */
   fetch?: typeof fetch;
@@ -34,8 +36,11 @@ function withTimeout(baseFetch: typeof fetch, timeoutMs: number): typeof fetch {
 function authMiddleware(apiKey: string): Middleware {
   return {
     onRequest({ request }) {
+      // mdtidy v1 authenticates with X-API-KEY only. `Authorization: Bearer`
+      // is blocked globally by the app middleware (reserved for future OAuth
+      // Apps), so we must NOT send it. Workspace routes read X-API-KEY via
+      // resolveActor; convert/usage read it directly.
       request.headers.set('X-API-KEY', apiKey);
-      request.headers.set('Authorization', `Bearer ${apiKey}`);
       return request;
     },
   };

@@ -20,7 +20,7 @@ export async function startStdio(opts: StdioOptions = {}): Promise<void> {
       'MDTIDY_API_KEY is required. Create a key at https://mdtidy.com/account/api-keys and set it in your MCP client config.',
     );
   }
-  const baseUrl = opts.baseUrl ?? process.env.MDTIDY_BASE_URL ?? 'https://mdtidy.com';
+  const baseUrl = opts.baseUrl ?? process.env.MDTIDY_BASE_URL ?? 'https://www.mdtidy.com';
   const ctx = buildContext({ apiKey, baseUrl, transport: 'stdio' });
 
   const server = new McpServer(

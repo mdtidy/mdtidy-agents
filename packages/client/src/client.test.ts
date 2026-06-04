@@ -11,7 +11,7 @@ function jsonResponse(body: unknown, status = 200): Response {
 }
 
 describe('createMdtidyClient', () => {
-  it('sends both X-API-KEY and Authorization: Bearer with the same key', async () => {
+  it('sends X-API-KEY only (never Authorization: Bearer — blocked by mdtidy v1)', async () => {
     let xKey: string | null = null;
     let auth: string | null = null;
     const client = createMdtidyClient({
@@ -34,7 +34,7 @@ describe('createMdtidyClient', () => {
 
     const { data } = await client.GET('/api/v1/usage', {});
     expect(xKey).toBe('mt_test_abc');
-    expect(auth).toBe('Bearer mt_test_abc');
+    expect(auth).toBeNull(); // Authorization: Bearer is reserved/blocked in mdtidy v1
     expect(data?.creditsRemaining).toBe(5);
   });
 

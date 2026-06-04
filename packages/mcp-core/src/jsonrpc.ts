@@ -85,8 +85,17 @@ export async function handleJsonRpc(
       } catch (err) {
         // Per MCP, tool execution failures are returned as an error *result*
         // (isError), not a JSON-RPC protocol error, so the model can react.
-        const message = err instanceof Error ? err.message : String(err);
-        return ok({ content: [{ type: 'text', text: `Error: ${message}` }], isError: true });
+        // Surface the underlying `cause` (undici wraps network failures as a
+        // terse "fetch failed" — the cause carries the real reason: ENOTFOUND,
+        // ECONNREFUSED, cert errors, …) to the result AND the server log.
+        const e = err instanceof Error ? err : new Error(String(err));
+        const cause = (e as { cause?: { code?: unknown; message?: unknown } }).cause;
+        const causeStr = cause ? ` (cause: ${String(cause.code ?? cause.message ?? cause)})` : '';
+        console.error(`[mdtidy-mcp] tool "${name}" failed: ${e.message}${causeStr}`);
+        return ok({
+          content: [{ type: 'text', text: `Error: ${e.message}${causeStr}` }],
+          isError: true,
+        });
       }
     }
     default:
