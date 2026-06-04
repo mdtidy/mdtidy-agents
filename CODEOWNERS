@@ -1,0 +1,6 @@
+# Default owners for everything in the repo.
+* @mdtidy/maintainers
+
+# Generated outputs — review carefully on drift PRs.
+/packages/client/src/generated/ @mdtidy/maintainers
+/contract/ @mdtidy/maintainers

@@ -1,0 +1,57 @@
+{
+  "name": "@mdtidy/mcp",
+  "version": "1.0.0",
+  "description": "Model Context Protocol server for Markdown Tidy (mdtidy.com) — tidy, convert, save, and share Markdown from any AI agent.",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "mdtidy-mcp": "./dist/bin.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./http": {
+      "types": "./dist/http.d.ts",
+      "import": "./dist/http.js"
+    }
+  },
+  "files": [
+    "dist",
+    "server.json",
+    "README.md"
+  ],
+  "mcpName": "com.mdtidy/mcp",
+  "keywords": [
+    "mcp",
+    "modelcontextprotocol",
+    "mdtidy",
+    "markdown",
+    "ai-agent"
+  ],
+  "homepage": "https://github.com/mdtidy/mdtidy-agents",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mdtidy/mdtidy-agents.git"
+  },
+  "scripts": {
+    "build": "tsup",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.0",
+    "zod": "^3.23.8",
+    "zod-to-json-schema": "^3.23.5"
+  },
+  "devDependencies": {
+    "@mdtidy/client": "workspace:*",
+    "@mdtidy/mcp-core": "workspace:*",
+    "@mdtidy/tools": "workspace:*",
+    "@types/node": "^22.8.0",
+    "tsup": "^8.3.0",
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.4"
+  }
+}

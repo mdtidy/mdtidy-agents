@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "mdtidy": {
+      "command": "npx",
+      "args": ["-y", "@mdtidy/mcp"],
+      "env": { "MDTIDY_API_KEY": "${MDTIDY_API_KEY}" }
+    }
+  }
+}

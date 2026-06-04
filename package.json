@@ -1,0 +1,35 @@
+{
+  "name": "mdtidy-agents",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Agentic integration layer for mdtidy.com — the MCP server, client, and tools.",
+  "license": "MIT",
+  "packageManager": "pnpm@10.30.2",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "turbo run build",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "generate": "tsx scripts/generate.ts",
+    "check:generated": "tsx scripts/check-generated.ts",
+    "fetch-contract": "tsx scripts/fetch-contract.ts"
+  },
+  "devDependencies": {
+    "@changesets/cli": "^2.27.9",
+    "@eslint/js": "^9.13.0",
+    "@types/node": "^22.8.0",
+    "eslint": "^9.13.0",
+    "openapi-typescript": "7.4.4",
+    "prettier": "^3.3.3",
+    "tsx": "^4.19.1",
+    "turbo": "^2.2.3",
+    "typescript": "^5.6.3",
+    "typescript-eslint": "^8.11.0"
+  }
+}

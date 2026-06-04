@@ -1,0 +1,11 @@
+{
+  "name": "mdtidy",
+  "owner": { "name": "Markdown Tidy", "url": "https://mdtidy.com" },
+  "plugins": [
+    {
+      "name": "mdtidy",
+      "source": "./plugins/claude",
+      "description": "Tidy, convert, save, and share Markdown with mdtidy."
+    }
+  ]
+}

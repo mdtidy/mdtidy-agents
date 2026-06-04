@@ -1,0 +1,8 @@
+node_modules/
+dist/
+.turbo/
+coverage/
+pnpm-lock.yaml
+contract/openapi.json
+**/generated/**
+docs/tools.md

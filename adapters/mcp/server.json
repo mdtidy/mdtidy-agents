@@ -1,0 +1,28 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-09-29/server.json",
+  "name": "com.mdtidy/mcp",
+  "description": "Clean, repair, and convert AI-generated Markdown to HTML/PDF/DOCX/PNG; save and share documents.",
+  "version": "1.0.0",
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "@mdtidy/mcp",
+      "version": "1.0.0",
+      "transport": { "type": "stdio" },
+      "environmentVariables": [
+        {
+          "name": "MDTIDY_API_KEY",
+          "description": "mdtidy API key (mt_live_… / mt_test_…). Create one at https://mdtidy.com/account/api-keys.",
+          "isRequired": true,
+          "isSecret": true
+        },
+        {
+          "name": "MDTIDY_BASE_URL",
+          "description": "Override the API base URL. Defaults to https://mdtidy.com.",
+          "isRequired": false
+        }
+      ]
+    }
+  ],
+  "remotes": [{ "type": "streamable-http", "url": "https://mdtidy.com/mcp" }]
+}

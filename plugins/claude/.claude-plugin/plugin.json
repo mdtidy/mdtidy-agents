@@ -1,0 +1,6 @@
+{
+  "name": "mdtidy",
+  "description": "Tidy and convert AI-generated Markdown, and save & share documents, via mdtidy.com.",
+  "version": "1.0.0",
+  "author": { "name": "Markdown Tidy", "url": "https://mdtidy.com" }
+}
