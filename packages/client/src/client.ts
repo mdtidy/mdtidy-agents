@@ -27,32 +27,20 @@ export interface MdtidyClientOptions {
 export type MdtidyClient = Client<paths>;
 
 function withTimeout(baseFetch: typeof fetch, timeoutMs: number): typeof fetch {
-  return async (input, init) => {
-    // A caller-supplied signal wins — don't override it.
-    if (init?.signal) return baseFetch(input, init);
-    const signal = AbortSignal.timeout(timeoutMs);
-    // openapi-fetch hands us a fully-built `Request` as `input` (no init).
-    // Passing a second init to fetch() makes undici re-read the request body
-    // and throw "expected non-null body source" for POST/PATCH. Buffer the body
-    // first, then reconstruct the request with the timeout signal attached.
-    if (input instanceof Request) {
-      const method = input.method.toUpperCase();
-      // Read the body as a STRING (not ArrayBuffer): a string is re-sendable, so
-      // it survives a redirect, whereas an ArrayBuffer gets detached after the
-      // first send (undici: "detached ArrayBuffer"). Our API bodies are JSON.
-      const hasBody = method !== 'GET' && method !== 'HEAD';
-      const body = hasBody ? (await input.text()) || undefined : undefined;
-      return baseFetch(
-        new Request(input.url, {
-          method: input.method,
-          headers: input.headers,
-          body,
-          redirect: input.redirect,
-          signal,
-        }),
+  // Pass the request through to fetch UNMODIFIED. Reconstructing it to attach a
+  // timeout signal (`new Request(...)` / `fetch(req, init)`) re-reads the body
+  // and undici rejects it ("expected non-null body source" / detached
+  // ArrayBuffer) — fragile across undici versions and the bundled runtime.
+  // Enforce the timeout with a race instead, so the body is never touched.
+  return (input, init) => {
+    let timer: ReturnType<typeof setTimeout>;
+    const timeout = new Promise<Response>((_, reject) => {
+      timer = setTimeout(
+        () => reject(new Error(`mdtidy request timed out after ${timeoutMs}ms`)),
+        timeoutMs,
       );
-    }
-    return baseFetch(input, { ...init, signal });
+    });
+    return Promise.race([baseFetch(input, init), timeout]).finally(() => clearTimeout(timer));
   };
 }
 
