@@ -37,7 +37,11 @@ function withTimeout(baseFetch: typeof fetch, timeoutMs: number): typeof fetch {
     // first, then reconstruct the request with the timeout signal attached.
     if (input instanceof Request) {
       const method = input.method.toUpperCase();
-      const body = method === 'GET' || method === 'HEAD' ? undefined : await input.arrayBuffer();
+      // Read the body as a STRING (not ArrayBuffer): a string is re-sendable, so
+      // it survives a redirect, whereas an ArrayBuffer gets detached after the
+      // first send (undici: "detached ArrayBuffer"). Our API bodies are JSON.
+      const hasBody = method !== 'GET' && method !== 'HEAD';
+      const body = hasBody ? (await input.text()) || undefined : undefined;
       return baseFetch(
         new Request(input.url, {
           method: input.method,
