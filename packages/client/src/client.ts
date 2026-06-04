@@ -27,9 +27,28 @@ export interface MdtidyClientOptions {
 export type MdtidyClient = Client<paths>;
 
 function withTimeout(baseFetch: typeof fetch, timeoutMs: number): typeof fetch {
-  return (input, init) => {
+  return async (input, init) => {
+    // A caller-supplied signal wins — don't override it.
     if (init?.signal) return baseFetch(input, init);
-    return baseFetch(input, { ...init, signal: AbortSignal.timeout(timeoutMs) });
+    const signal = AbortSignal.timeout(timeoutMs);
+    // openapi-fetch hands us a fully-built `Request` as `input` (no init).
+    // Passing a second init to fetch() makes undici re-read the request body
+    // and throw "expected non-null body source" for POST/PATCH. Buffer the body
+    // first, then reconstruct the request with the timeout signal attached.
+    if (input instanceof Request) {
+      const method = input.method.toUpperCase();
+      const body = method === 'GET' || method === 'HEAD' ? undefined : await input.arrayBuffer();
+      return baseFetch(
+        new Request(input.url, {
+          method: input.method,
+          headers: input.headers,
+          body,
+          redirect: input.redirect,
+          signal,
+        }),
+      );
+    }
+    return baseFetch(input, { ...init, signal });
   };
 }
 

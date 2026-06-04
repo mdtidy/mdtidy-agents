@@ -53,4 +53,31 @@ describe('createMdtidyClient', () => {
       client.POST('/api/v1/convert', { body: { markdown: '# h', format: 'text' } }),
     ).rejects.toBeInstanceOf(MdtidyApiError);
   });
+
+  it('preserves the POST body through the timeout wrapper (regression: "expected non-null body source")', async () => {
+    let received: string | null = null;
+    const client = createMdtidyClient({
+      apiKey: 'k',
+      baseUrl: 'https://x.test',
+      fetch: async (input, init) => {
+        const req = input instanceof Request ? input : new Request(input, init);
+        received = await req.text();
+        return jsonResponse({
+          format: 'text',
+          contentType: 'text/plain',
+          byteSize: 1,
+          designSystem: 'minimal-clean',
+          output: 'x',
+          warnings: [],
+          creditsCharged: 1,
+          creditsRemaining: 1,
+          requestId: 'r',
+        });
+      },
+    });
+
+    await client.POST('/api/v1/convert', { body: { markdown: '# h', format: 'text' } });
+    expect(received).not.toBeNull();
+    expect(JSON.parse(received!)).toEqual({ markdown: '# h', format: 'text' });
+  });
 });
