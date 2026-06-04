@@ -32,6 +32,9 @@ jobs:
           cache: pnpm
           registry-url: 'https://registry.npmjs.org'
 
+      # OIDC trusted publishing requires npm >= 11.5.1 (Node 22 ships npm 10).
+      - run: npm install -g npm@latest
+
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
 
@@ -45,10 +48,10 @@ jobs:
           title: 'chore: version packages'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # OIDC trusted publishing (preferred) needs no token — configure the
-          # repo as a trusted publisher for @mdtidy/mcp on npmjs.com (§13).
-          # Until then, set an NPM_TOKEN automation token secret as a fallback:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          # OIDC trusted publishing is configured for @mdtidy/mcp
+          # (mdtidy/mdtidy-agents → release.yml). No npm token needed — npm
+          # exchanges a short-lived OIDC token at publish time and attaches
+          # provenance automatically. Requires npm >= 11.5.1 (installed above).
           NPM_CONFIG_PROVENANCE: 'true'
 
       # Publish server.json to the MCP Registry after npm succeeds. Opt-in via a
