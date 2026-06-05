@@ -1,64 +1,63 @@
 ---
 name: mdtidy
-description: Use when the user has messy or AI-generated Markdown to clean, normalize, or convert to PDF/DOCX/HTML/PNG, or wants to save and share a document. Works through the mdtidy MCP tools if available, otherwise the mdtidy REST API.
+description: This skill should be used when the user wants to save, share, or export a document, or to clean up Markdown via mdtidy (mdtidy.com) — e.g. "save this to my workspace", "share this and give me a link", "export this to PDF / DOCX / PNG", or "tidy / clean up this Markdown". Routes through the mdtidy MCP tools when available, otherwise the mdtidy REST API.
 license: MIT
 ---
 
 # mdtidy
 
-[mdtidy.com](https://mdtidy.com) cleans and repairs messy, AI-generated Markdown
-and renders it to **HTML, plain text, PDF, DOCX, or PNG** — and can save documents
-to the user's workspace and produce a public share link. Input is plain Markdown;
-there is no special format to learn.
+mdtidy ([mdtidy.com](https://mdtidy.com)) **saves, shares, and exports** Markdown
+documents, and **cleans up** messy or AI-generated Markdown. Input is plain
+Markdown — there is no special format to learn.
 
 ## When to use
 
-- The user pastes messy Markdown (stray bullets, broken tables, artifacts) and
-  wants it cleaned or "made readable."
-- The user wants a **branded export**: "give me a PDF / DOCX / PNG of this."
-- The user wants to **save** a document or **share** it via a link.
+- **Save** a document to the user's mdtidy workspace (one step, no duplicates).
+- **Share** a document publicly and return a link.
+- **Export** Markdown to PDF, DOCX, HTML, or PNG (with a design system).
+- **Clean / tidy** messy Markdown — broken tables, stray bullets, AI artifacts.
+- **Check** the credit balance, plan, or saved projects and files.
 
-## Setup (one-time)
+## How to call mdtidy
 
-The user needs an mdtidy API key (`mt_live_…`) from
-<https://mdtidy.com/account/api-keys>. Treat it as a secret — never echo or commit it.
+Prefer whichever transport is available:
 
-There are two ways to call mdtidy; **prefer whichever is available**:
-
-1. **mdtidy MCP tools** — if tools named `tidy_markdown`, `save_document`, etc.
-   are present in this session, call them directly.
-2. **REST API** — otherwise call it over HTTP with the key in the **`X-API-KEY`**
-   header (NOT `Authorization: Bearer`):
+1. **MCP tools** — when tools named `tidy_markdown`, `save_document`,
+   `share_project_public`, etc. are present in the session, call them directly.
+2. **REST API** — otherwise call it over HTTP. Authenticate with the user's API
+   key in the **`X-API-KEY`** header (NOT `Authorization: Bearer`):
 
    ```http
    POST https://mdtidy.com/api/v1/convert
    X-API-KEY: <the user's key>
    Content-Type: application/json
 
-   { "markdown": "<content>", "format": "text" }
+   { "markdown": "<content>", "format": "pdf" }
    ```
 
-   `format` ∈ `html` | `text` | `pdf` | `docx` | `png`. `html`/`text` return
-   `output` (a string); `pdf`/`docx`/`png` return base64 in `outputBase64`. Every
-   response includes `creditsCharged`, `creditsRemaining`, and `requestId`.
+Create a key at <https://mdtidy.com/account/api-keys> (`mt_live_…`). Treat it as a
+secret — never print or commit it.
 
-## Capabilities (MCP tool ↔ REST)
+## Core operations
 
-- **Tidy & convert** — `tidy_markdown` ↔ `POST /api/v1/convert`. `designSystem` ∈
-  `minimal-clean` | `executive-report` | `developer-docs`. **1 credit per render**
-  (refunded on failure).
-- **Save (upsert)** — `save_document(content, name?, project?)` — one-step save;
-  finds/creates the project and updates in place if the name exists. **1 credit on
-  create, 0 on update.**
-- **Read** — `check_usage`, `get_entitlement`, `list_projects`, `get_project`,
-  `get_file`. Free.
-- **Share** — `get_project_share`, `share_project_public` → a public
-  `https://mdtidy.com/p/…` link.
+| Goal               | MCP tool               | REST                                      | Cost                |
+| ------------------ | ---------------------- | ----------------------------------------- | ------------------- |
+| **Save** (upsert)  | `save_document`        | composite                                 | 1 create / 0 update |
+| **Share** publicly | `share_project_public` | `POST /api/v1/projects/{id}/share/public` | 1                   |
+| **Export / clean** | `tidy_markdown`        | `POST /api/v1/convert`                    | 1 / render          |
+| **Check usage**    | `check_usage`          | `GET /api/v1/usage`                       | free                |
+
+`save_document` is the fast path for saving — it finds or creates the project and
+updates in place when a same-named doc already exists, so it never duplicates.
+
+For **every** operation — all 12 tools with their parameters, REST endpoints, and
+credit costs — read **`references/operations.md`**.
 
 ## Behavior
 
-1. Cleanup/convert → tidy first; report the fixes applied and the credit cost.
-2. "Save this" → prefer `save_document` (one step, never duplicates).
-3. Before a batch → check usage; on `out_of_credits`, ask the user to top up.
-4. Preserve the original meaning; do not invent content. The API key is a secret
-   — never print it back.
+1. To export or clean, call `tidy_markdown` (or `POST /api/v1/convert`); report
+   the cleanup fixes applied and the credit cost.
+2. To save, prefer `save_document` over the granular write tools.
+3. Before a batch of renders or saves, call `check_usage`; on `out_of_credits`,
+   ask the user to top up.
+4. Preserve the original meaning. Do not invent content.
