@@ -1,9 +1,7 @@
-import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 
 import { buildContext } from './context';
-import { registerTools } from './register';
-import { SERVER_INFO } from './server-info';
+import { buildMcpServer } from './server';
 
 export interface StdioOptions {
   /** Defaults to process.env.MDTIDY_API_KEY. */
@@ -23,11 +21,6 @@ export async function startStdio(opts: StdioOptions = {}): Promise<void> {
   const baseUrl = opts.baseUrl ?? process.env.MDTIDY_BASE_URL ?? 'https://www.mdtidy.com';
   const ctx = buildContext({ apiKey, baseUrl, transport: 'stdio' });
 
-  const server = new McpServer(
-    { name: SERVER_INFO.name, version: SERVER_INFO.version },
-    { capabilities: { tools: {} } },
-  );
-  registerTools(server, ctx);
-
+  const server = buildMcpServer(ctx);
   await server.connect(new StdioServerTransport());
 }

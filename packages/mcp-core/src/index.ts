@@ -1,5 +1,6 @@
 export { buildContext, type BuildContextOptions } from './context';
 export { registerTools } from './register';
+export { buildMcpServer } from './server';
 export {
   handleJsonRpc,
   type JsonRpcRequest,

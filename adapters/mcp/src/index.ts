@@ -3,6 +3,7 @@
 
 export {
   registerTools,
+  buildMcpServer,
   buildContext,
   handleJsonRpc,
   startStdio,
