@@ -8,7 +8,10 @@ const input = z.object({
   markdown: z.string().min(1).describe('The Markdown to clean and convert.'),
   format: z
     .enum(['html', 'text', 'pdf', 'docx', 'png'])
-    .describe('Output format. html/text return inline; pdf/docx/png return a file or resource.'),
+    .default('text')
+    .describe(
+      'Output format. Defaults to "text" (cleaned Markdown, inline). html/text return inline; pdf/docx/png return a file or resource.',
+    ),
   designSystem: z
     .enum(['minimal-clean', 'executive-report', 'developer-docs'])
     .optional()

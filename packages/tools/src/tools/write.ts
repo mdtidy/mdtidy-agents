@@ -56,10 +56,26 @@ async function resolveProject(
   }
 }
 
+/** Parse a quoted ETag / version string (`"3"` or `3`) into a numeric version. */
+function versionFromEtag(etag: string | number | undefined | null): number | undefined {
+  if (etag == null) return undefined;
+  const n = Number(String(etag).replace(/"/g, '').trim());
+  return Number.isFinite(n) ? n : undefined;
+}
+
+// Carry the optimistic-lock version in the BODY, never the `If-Match` header.
+// `If-Match` is a reserved HTTP conditional-request header (RFC 9110 §13.1.1):
+// a CDN (Cloudflare, in front of mdtidy.com) is entitled to evaluate it at the
+// edge and answer `412 Precondition Failed` — even rewriting an origin `200` to
+// a `412`, so the write commits server-side but the caller sees an error. The
+// route reads the version identically from the body
+// (`parseIfMatch(header) ?? body.version`), so the body form is edge-proof.
+// See the mdtidy bug note 2026-06-03-autosave-ifmatch-412.
 async function patchContent(ctx: ToolContext, fileId: string, etag: string, content: string) {
+  const version = versionFromEtag(etag);
   const { data } = await ctx.client.PATCH('/api/v1/files/{id}', {
-    params: { path: { id: fileId }, header: { 'If-Match': etag } },
-    body: { content },
+    params: { path: { id: fileId } },
+    body: { content, ...(version != null ? { version } : {}) },
   });
   return data!;
 }
@@ -118,16 +134,18 @@ export const updateFile = defineTool({
       .describe('ETag/version for safe content writes (required when changing content).'),
   }),
   handler: async (i, ctx) => {
+    // The version guards content writes only, and travels in the BODY — not the
+    // `If-Match` header, which a CDN can answer with 412 at the edge (see
+    // patchContent above).
+    const version = i.content != null ? versionFromEtag(i.ifMatch) : undefined;
     const { data } = await ctx.client.PATCH('/api/v1/files/{id}', {
-      params: {
-        path: { id: i.id },
-        ...(i.ifMatch ? { header: { 'If-Match': i.ifMatch } } : {}),
-      },
+      params: { path: { id: i.id } },
       body: {
         ...(i.content != null ? { content: i.content } : {}),
         ...(i.name != null ? { name: i.name } : {}),
         ...(i.folder_id !== undefined ? { folder_id: i.folder_id } : {}),
         ...(i.archived != null ? { archived: i.archived } : {}),
+        ...(version != null ? { version } : {}),
       },
     });
     return result(text(`Updated file "${data!.name}" (v${data!.version}).`), jsonText(data!));
