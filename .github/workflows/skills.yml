@@ -1,0 +1,58 @@
+name: Skills
+
+# Validate the agent skills under skills/<name>/SKILL.md so
+# `npx skills add mdtidy/mdtidy-agents` (skills.sh / vercel-labs/skills) stays
+# installable across every supported client.
+#
+# NOTE: there is NO "publish to skills.sh" step. The skills CLI reads SKILL.md
+# straight from this public GitHub repo, and skills.sh indexes via install
+# telemetry — no registry, no token, no push. This job's only job is to keep the
+# skill well-formed: a `name`/`description` frontmatter where `name` matches the
+# directory (the install identifier).
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'skills/**'
+      - '.github/workflows/skills.yml'
+  pull_request:
+    paths:
+      - 'skills/**'
+      - '.github/workflows/skills.yml'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate SKILL.md frontmatter
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          fail=0
+          found=0
+          for f in skills/*/SKILL.md; do
+            found=1
+            dir=$(basename "$(dirname "$f")")
+            # Extract the YAML frontmatter block (between the first two '---').
+            fm=$(awk 'NR==1 && $0=="---"{f=1;next} f && $0=="---"{exit} f{print}' "$f")
+            name=$(printf '%s\n' "$fm" | sed -n 's/^name:[[:space:]]*//p' | head -1)
+            desc=$(printf '%s\n' "$fm" | sed -n 's/^description:[[:space:]]*//p' | head -1)
+            if [ -z "$name" ] || [ -z "$desc" ]; then
+              echo "::error file=$f::SKILL.md needs both name and description frontmatter"
+              fail=1
+            elif [ "$name" != "$dir" ]; then
+              echo "::error file=$f::frontmatter name '$name' must match its directory '$dir'"
+              fail=1
+            else
+              echo "ok  $f  (name=$name)"
+            fi
+          done
+          if [ "$found" -eq 0 ]; then
+            echo "::error::no skills/*/SKILL.md found"
+            fail=1
+          fi
+          exit "$fail"

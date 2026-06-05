@@ -11,8 +11,9 @@ documents. Input is plain Markdown — no special format to learn.
 ## Setup
 
 Configure the mdtidy MCP server (`npx -y @mdtidy/mcp` with `MDTIDY_API_KEY`, or
-the hosted endpoint `https://mdtidy.com/mcp` with `Authorization: Bearer <key>`).
-Create a key at <https://mdtidy.com/account/api-keys>.
+the hosted endpoint `https://www.mdtidy.com/mcp` with the `X-API-KEY` header —
+mdtidy does not accept `Authorization: Bearer`). Create a key at
+<https://mdtidy.com/account/api-keys>.
 
 ## Tools
 
