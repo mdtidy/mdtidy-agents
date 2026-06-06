@@ -87,9 +87,9 @@ export const TOOL_CATALOG: CatalogEntry[] = [
     cost: 0,
     title: 'Create a folder',
     description:
-      'Create a folder inside a project to organize files. Optionally nest it under a ' +
-      'parent folder. Returns the folder id — pass it as folder_id to save_file / ' +
-      'update_file. Free.',
+      'Find-or-create a folder inside a project (idempotent — re-calling with the same name ' +
+      'returns the existing folder, never a duplicate). Optionally nest it under a parent ' +
+      'folder. Returns the folder id — pass it as folder_id to save_file / update_file. Free.',
   },
   {
     name: 'update_folder',

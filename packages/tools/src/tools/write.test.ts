@@ -122,23 +122,25 @@ const PROJECT_ID = '00000000-0000-4000-8000-00000000000a';
 const FOLDER_ID = '00000000-0000-4000-8000-00000000000b';
 
 describe('folder tools map to the workspace folder endpoints', () => {
-  it('create_folder → POST /projects/{id}/folders with name (+ optional parent)', async () => {
-    const { ctx, reqs } = capturingCtx((path, method) =>
-      method === 'POST' && path === `/api/v1/projects/${PROJECT_ID}/folders`
-        ? jsonResponse(
-            {
-              id: FOLDER_ID,
-              type: 'folder',
-              project_id: PROJECT_ID,
-              parent_id: PROJECT_ID,
-              name: 'proposals',
-              created_at: '',
-              updated_at: '',
-            },
-            201,
-          )
-        : undefined,
-    );
+  it('create_folder creates when absent → GET project (empty), then POST folders', async () => {
+    const { ctx, reqs } = capturingCtx((path, method) => {
+      if (method === 'GET' && path === `/api/v1/projects/${PROJECT_ID}`)
+        return jsonResponse({ id: PROJECT_ID, folders: [], files: [] });
+      if (method === 'POST' && path === `/api/v1/projects/${PROJECT_ID}/folders`)
+        return jsonResponse(
+          {
+            id: FOLDER_ID,
+            type: 'folder',
+            project_id: PROJECT_ID,
+            parent_id: PROJECT_ID,
+            name: 'proposals',
+            created_at: '',
+            updated_at: '',
+          },
+          201,
+        );
+      return undefined;
+    });
 
     await getTool('create_folder')!.handler({ project_id: PROJECT_ID, name: 'proposals' }, ctx);
 
@@ -148,30 +150,80 @@ describe('folder tools map to the workspace folder endpoints', () => {
     expect(post!.body.parent_folder_id).toBeUndefined();
   });
 
-  it('create_folder forwards parent_folder_id when nesting', async () => {
+  it('create_folder is idempotent — returns the existing folder, never a duplicate POST', async () => {
     const { ctx, reqs } = capturingCtx((path, method) =>
-      method === 'POST' && path === `/api/v1/projects/${PROJECT_ID}/folders`
-        ? jsonResponse(
+      method === 'GET' && path === `/api/v1/projects/${PROJECT_ID}`
+        ? jsonResponse({
+            id: PROJECT_ID,
+            folders: [
+              {
+                id: FOLDER_ID,
+                type: 'folder',
+                project_id: PROJECT_ID,
+                parent_id: PROJECT_ID,
+                name: 'proposals',
+                created_at: '',
+                updated_at: '',
+              },
+            ],
+            files: [],
+          })
+        : undefined,
+    );
+
+    const res = await getTool('create_folder')!.handler(
+      { project_id: PROJECT_ID, name: 'proposals' },
+      ctx,
+    );
+
+    expect(reqs.some((r) => r.method === 'POST')).toBe(false);
+    expect(res.content.some((c) => c.type === 'text' && c.text.includes(FOLDER_ID))).toBe(true);
+  });
+
+  it('create_folder matches on parent_folder_id when nesting (root folder of same name is not a match)', async () => {
+    const ROOT_DUP = '00000000-0000-4000-8000-00000000000c';
+    const { ctx, reqs } = capturingCtx((path, method) => {
+      if (method === 'GET' && path === `/api/v1/projects/${PROJECT_ID}`)
+        return jsonResponse({
+          id: PROJECT_ID,
+          // A same-named folder exists at the ROOT — it must NOT match a nested create.
+          folders: [
             {
-              id: FOLDER_ID,
+              id: ROOT_DUP,
               type: 'folder',
               project_id: PROJECT_ID,
-              parent_id: FOLDER_ID,
+              parent_id: PROJECT_ID,
               name: 'sub',
               created_at: '',
               updated_at: '',
             },
-            201,
-          )
-        : undefined,
-    );
+          ],
+          files: [],
+        });
+      if (method === 'POST' && path === `/api/v1/projects/${PROJECT_ID}/folders`)
+        return jsonResponse(
+          {
+            id: FOLDER_ID,
+            type: 'folder',
+            project_id: PROJECT_ID,
+            parent_id: FOLDER_ID,
+            name: 'sub',
+            created_at: '',
+            updated_at: '',
+          },
+          201,
+        );
+      return undefined;
+    });
 
     await getTool('create_folder')!.handler(
       { project_id: PROJECT_ID, name: 'sub', parent_folder_id: FOLDER_ID },
       ctx,
     );
 
-    expect(reqs.find((r) => r.method === 'POST')!.body.parent_folder_id).toBe(FOLDER_ID);
+    const post = reqs.find((r) => r.method === 'POST');
+    expect(post).toBeDefined();
+    expect(post!.body.parent_folder_id).toBe(FOLDER_ID);
   });
 
   it('update_folder → PATCH /folders/{id} with the new name', async () => {
@@ -206,5 +258,17 @@ describe('folder tools map to the workspace folder endpoints', () => {
     await getTool('delete_folder')!.handler({ id: FOLDER_ID }, ctx);
 
     expect(reqs.find((r) => r.method === 'DELETE')!.path).toBe(`/api/v1/folders/${FOLDER_ID}`);
+  });
+
+  it('folder tools carry MCP risk annotations', () => {
+    expect(getTool('create_folder')!.annotations).toMatchObject({
+      destructiveHint: false,
+      idempotentHint: true,
+    });
+    expect(getTool('update_folder')!.annotations).toMatchObject({
+      destructiveHint: false,
+      idempotentHint: true,
+    });
+    expect(getTool('delete_folder')!.annotations).toMatchObject({ destructiveHint: true });
   });
 });

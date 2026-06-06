@@ -31,7 +31,7 @@ shown per tool; failed renders are refunded automatically.
 | Tool | Cost | What it does |
 | --- | --- | --- |
 | `create_project` | free | Create a workspace project (a container for files). Free. <br/>_(createProject)_ |
-| `create_folder` | free | Create a folder inside a project to organize files. Optionally nest it under a parent folder. Returns the folder id — pass it as folder_id to save_file / update_file. Free. <br/>_(createFolder)_ |
+| `create_folder` | free | Find-or-create a folder inside a project (idempotent — re-calling with the same name returns the existing folder, never a duplicate). Optionally nest it under a parent folder. Returns the folder id — pass it as folder_id to save_file / update_file. Free. <br/>_(createFolder)_ |
 | `update_folder` | free | Rename an existing folder. Free. <br/>_(updateFolder)_ |
 | `delete_folder` | free | Delete a folder. Returns 409 if it still holds active files (move or archive them first); archived files fall back to the project root. Free. <br/>_(deleteFolder)_ |
 | `save_document` | 1 credit (create) / 0 (update) | Fast path — save Markdown in one step. Finds or creates the target project (default "Drafts") and creates the file, or updates it if a same-named document already exists. 1 credit on create, 0 on update. Returns the file id, project, and a link. Use this to start fast; use the granular tools for structured workspaces. <br/>_(listProjects + createProject + getProject + createFile + updateFile)_ |

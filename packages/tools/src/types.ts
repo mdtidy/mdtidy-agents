@@ -27,6 +27,14 @@ export interface ToolDef<Schema extends z.ZodObject<z.ZodRawShape> = z.ZodObject
   inputSchema: Schema;
   /** Credit cost shown to agents (0 = free, 1 = one credit, '1/0' = create vs update). */
   cost: 0 | 1 | '1/0';
+  /** MCP tool behavior hints (advisory; surfaced to clients/classifiers). */
+  annotations?: {
+    title?: string;
+    readOnlyHint?: boolean;
+    destructiveHint?: boolean;
+    idempotentHint?: boolean;
+    openWorldHint?: boolean;
+  };
   handler: (input: z.infer<Schema>, ctx: ToolContext) => Promise<ToolResult>;
 }
 

@@ -61,6 +61,17 @@ describe('createMcpRouteHandler (stateless HTTP)', () => {
     expect(body.result.tools[0].inputSchema.type).toBe('object');
   });
 
+  it('surfaces MCP risk annotations in tools/list', async () => {
+    const body: any = await (await post('tools/list', {})).json();
+    const createFolder = body.result.tools.find((t: any) => t.name === 'create_folder');
+    expect(createFolder.annotations).toMatchObject({
+      destructiveHint: false,
+      idempotentHint: true,
+    });
+    const deleteFolder = body.result.tools.find((t: any) => t.name === 'delete_folder');
+    expect(deleteFolder.annotations).toMatchObject({ destructiveHint: true });
+  });
+
   it('calls tidy_markdown and shapes the result', async () => {
     const body: any = await (
       await post('tools/call', {

@@ -105,15 +105,46 @@ export const createFolder = defineTool({
       .optional()
       .describe('Optional parent folder for nesting; omit for the project root.'),
   }),
+  annotations: { destructiveHint: false, idempotentHint: true },
   handler: async (i, ctx) => {
-    const { data } = await ctx.client.POST('/api/v1/projects/{id}/folders', {
-      params: { path: { id: i.project_id } },
-      body: {
-        name: i.name,
-        ...(i.parent_folder_id ? { parent_folder_id: i.parent_folder_id } : {}),
-      },
-    });
-    return result(text(`Created folder "${data!.name}" (${data!.id}).`), jsonText(data!));
+    // Find-or-create: a folder is uniquely identified by (parent, name). A root
+    // folder's parent_id is the project id. Idempotent — safe to call every run.
+    // Mirrors resolveProject above (find-by-name → create → tolerate 409 race).
+    const findByName = async () => {
+      const { data } = await ctx.client.GET('/api/v1/projects/{id}', {
+        params: { path: { id: i.project_id }, query: {} },
+      });
+      const parent = i.parent_folder_id ?? data!.id;
+      return (data!.folders ?? []).find((f) => f.name === i.name && f.parent_id === parent);
+    };
+
+    const existing = await findByName();
+    if (existing) {
+      return result(
+        text(`Folder "${existing.name}" already exists (${existing.id}).`),
+        jsonText(existing),
+      );
+    }
+    try {
+      const { data } = await ctx.client.POST('/api/v1/projects/{id}/folders', {
+        params: { path: { id: i.project_id } },
+        body: {
+          name: i.name,
+          ...(i.parent_folder_id ? { parent_folder_id: i.parent_folder_id } : {}),
+        },
+      });
+      return result(text(`Created folder "${data!.name}" (${data!.id}).`), jsonText(data!));
+    } catch (err) {
+      if (err instanceof MdtidyApiError && err.status === 409) {
+        const afterRace = await findByName();
+        if (afterRace)
+          return result(
+            text(`Folder "${afterRace.name}" already exists (${afterRace.id}).`),
+            jsonText(afterRace),
+          );
+      }
+      throw err;
+    }
   },
 });
 
@@ -123,6 +154,7 @@ export const updateFolder = defineTool({
     id: z.string().uuid().describe('Folder id.'),
     name: z.string().min(1).max(200).describe('New folder name.'),
   }),
+  annotations: { destructiveHint: false, idempotentHint: true },
   handler: async (i, ctx) => {
     const { data } = await ctx.client.PATCH('/api/v1/folders/{id}', {
       params: { path: { id: i.id } },
@@ -137,6 +169,7 @@ export const deleteFolder = defineTool({
   inputSchema: z.object({
     id: z.string().uuid().describe('Folder id.'),
   }),
+  annotations: { destructiveHint: true },
   handler: async (i, ctx) => {
     await ctx.client.DELETE('/api/v1/folders/{id}', {
       params: { path: { id: i.id } },
