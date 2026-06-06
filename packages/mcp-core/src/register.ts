@@ -15,6 +15,7 @@ export function registerTools(
         title: tool.title,
         description: tool.description,
         inputSchema: tool.inputSchema.shape,
+        ...(tool.annotations ? { annotations: tool.annotations } : {}),
       },
       async (args: unknown) => {
         const res = await tool.handler(args as Record<string, unknown>, ctx);

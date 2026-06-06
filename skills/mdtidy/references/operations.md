@@ -28,11 +28,13 @@ Create a workspace project (a container for files).
 - Params: `name` (required), `description?`.
 - REST: `POST /api/v1/projects`.
 
-### `create_folder` — new folder in a project · free
+### `create_folder` — find-or-create a folder in a project · free
 
-Create a folder to organize files inside a project. Returns the folder `id` —
-pass it as `folder_id` to `save_file` / `update_file`. To find an existing
-folder's id first, read the project with `get_project` (it returns `folders`).
+Find-or-create a folder to organize files inside a project. **Idempotent** —
+re-calling with the same `name` (and parent) returns the existing folder instead
+of creating a duplicate, so it's safe to call on every run. Returns the folder
+`id` — pass it as `folder_id` to `save_file` / `update_file`. (You can still read
+the project with `get_project` to inspect its `folders` up front.)
 
 - Params: `project_id` (required), `name` (required), `parent_folder_id?` (nest
   under another folder; omit for the project root).

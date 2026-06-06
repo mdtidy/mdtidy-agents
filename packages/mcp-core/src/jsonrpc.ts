@@ -66,6 +66,7 @@ export async function handleJsonRpc(
           title: t.title,
           description: t.description,
           inputSchema: toolInputJsonSchema(t),
+          ...(t.annotations ? { annotations: t.annotations } : {}),
         })),
       });
     case 'tools/call': {

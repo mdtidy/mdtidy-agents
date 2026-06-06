@@ -7,6 +7,7 @@ import { defineTool } from '../types';
 export const checkUsage = defineTool({
   ...catalogMeta('check_usage'),
   inputSchema: z.object({}),
+  annotations: { readOnlyHint: true },
   handler: async (_i, ctx) => {
     const { data } = await ctx.client.GET('/api/v1/usage', {});
     const u = data!;
@@ -23,6 +24,7 @@ export const checkUsage = defineTool({
 export const getEntitlement = defineTool({
   ...catalogMeta('get_entitlement'),
   inputSchema: z.object({}),
+  annotations: { readOnlyHint: true },
   handler: async (_i, ctx) => {
     const { data } = await ctx.client.GET('/api/v1/credits', {});
     const e = data!;
@@ -43,6 +45,7 @@ export const listProjects = defineTool({
       .optional()
       .describe('Which projects to list. Defaults to mine.'),
   }),
+  annotations: { readOnlyHint: true },
   handler: async (i, ctx) => {
     const { data } = await ctx.client.GET('/api/v1/projects', {
       params: { query: i.scope ? { scope: i.scope } : {} },
@@ -58,6 +61,7 @@ export const getProject = defineTool({
     id: z.string().uuid().describe('Project id.'),
     includeArchived: z.boolean().optional().describe('Include archived files. Default false.'),
   }),
+  annotations: { readOnlyHint: true },
   handler: async (i, ctx) => {
     const { data } = await ctx.client.GET('/api/v1/projects/{id}', {
       params: {
@@ -72,6 +76,7 @@ export const getProject = defineTool({
 export const getFile = defineTool({
   ...catalogMeta('get_file'),
   inputSchema: z.object({ id: z.string().uuid().describe('File id.') }),
+  annotations: { readOnlyHint: true },
   handler: async (i, ctx) => {
     const { data } = await ctx.client.GET('/api/v1/files/{id}', {
       params: { path: { id: i.id } },
