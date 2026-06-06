@@ -54,7 +54,7 @@ describe('session — Streamable HTTP (hosted /mcp, X-API-KEY)', () => {
     expect(init.result.protocolVersion).toBe('2025-06-18');
 
     const list: any = await (await rpc(handler, 'tools/list', {})).json();
-    expect(list.result.tools).toHaveLength(12);
+    expect(list.result.tools).toHaveLength(15);
 
     const tidy = await call(handler, 'tidy_markdown', { markdown: '# Hi', format: 'text' });
     expect(tidy.isError).toBe(false);

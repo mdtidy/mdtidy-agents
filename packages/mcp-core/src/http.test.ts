@@ -56,7 +56,7 @@ describe('createMcpRouteHandler (stateless HTTP)', () => {
 
   it('lists the 12 tools', async () => {
     const body: any = await (await post('tools/list', {})).json();
-    expect(body.result.tools).toHaveLength(12);
+    expect(body.result.tools).toHaveLength(15);
     expect(body.result.tools[0].name).toBe('tidy_markdown');
     expect(body.result.tools[0].inputSchema.type).toBe('object');
   });

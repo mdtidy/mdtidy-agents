@@ -94,6 +94,57 @@ export const createProject = defineTool({
   },
 });
 
+export const createFolder = defineTool({
+  ...catalogMeta('create_folder'),
+  inputSchema: z.object({
+    project_id: z.string().uuid().describe('Project the folder belongs to.'),
+    name: z.string().min(1).max(200).describe('Folder name.'),
+    parent_folder_id: z
+      .string()
+      .uuid()
+      .optional()
+      .describe('Optional parent folder for nesting; omit for the project root.'),
+  }),
+  handler: async (i, ctx) => {
+    const { data } = await ctx.client.POST('/api/v1/projects/{id}/folders', {
+      params: { path: { id: i.project_id } },
+      body: {
+        name: i.name,
+        ...(i.parent_folder_id ? { parent_folder_id: i.parent_folder_id } : {}),
+      },
+    });
+    return result(text(`Created folder "${data!.name}" (${data!.id}).`), jsonText(data!));
+  },
+});
+
+export const updateFolder = defineTool({
+  ...catalogMeta('update_folder'),
+  inputSchema: z.object({
+    id: z.string().uuid().describe('Folder id.'),
+    name: z.string().min(1).max(200).describe('New folder name.'),
+  }),
+  handler: async (i, ctx) => {
+    const { data } = await ctx.client.PATCH('/api/v1/folders/{id}', {
+      params: { path: { id: i.id } },
+      body: { name: i.name },
+    });
+    return result(text(`Renamed folder to "${data!.name}" (${data!.id}).`), jsonText(data!));
+  },
+});
+
+export const deleteFolder = defineTool({
+  ...catalogMeta('delete_folder'),
+  inputSchema: z.object({
+    id: z.string().uuid().describe('Folder id.'),
+  }),
+  handler: async (i, ctx) => {
+    await ctx.client.DELETE('/api/v1/folders/{id}', {
+      params: { path: { id: i.id } },
+    });
+    return result(text(`Deleted folder ${i.id}.`));
+  },
+});
+
 export const saveFile = defineTool({
   ...catalogMeta('save_file'),
   inputSchema: z.object({

@@ -28,6 +28,31 @@ Create a workspace project (a container for files).
 - Params: `name` (required), `description?`.
 - REST: `POST /api/v1/projects`.
 
+### `create_folder` — new folder in a project · free
+
+Create a folder to organize files inside a project. Returns the folder `id` —
+pass it as `folder_id` to `save_file` / `update_file`. To find an existing
+folder's id first, read the project with `get_project` (it returns `folders`).
+
+- Params: `project_id` (required), `name` (required), `parent_folder_id?` (nest
+  under another folder; omit for the project root).
+- REST: `POST /api/v1/projects/{id}/folders`.
+
+### `update_folder` — rename a folder · free
+
+Rename an existing folder.
+
+- Params: `id` (required), `name` (required).
+- REST: `PATCH /api/v1/folders/{id}`.
+
+### `delete_folder` — remove a folder · free
+
+Delete a folder. **409** if it still holds active files (move or archive them
+first); archived files fall back to the project root.
+
+- Params: `id` (required).
+- REST: `DELETE /api/v1/folders/{id}`.
+
 ### `save_file` — first-save into a known project · 1 credit
 
 Create a Markdown file inside a project (idempotent via an idempotency key).

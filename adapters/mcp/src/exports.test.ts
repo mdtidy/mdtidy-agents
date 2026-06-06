@@ -10,8 +10,8 @@ import {
 } from './index';
 
 describe('@mdtidy/mcp public surface', () => {
-  it('re-exports the registry with the 12 v1 tools', () => {
-    expect(REGISTRY).toHaveLength(12);
+  it('re-exports the registry with the 15 v1 tools', () => {
+    expect(REGISTRY).toHaveLength(15);
     expect(REGISTRY.map((t) => t.name)).toContain('tidy_markdown');
     expect(REGISTRY.map((t) => t.name)).toContain('save_document');
   });

@@ -61,7 +61,7 @@ describe('session — Claude plugin', () => {
     const { client, close } = await connectStdioSession(backend);
     try {
       const { tools } = await client.listTools();
-      expect(tools).toHaveLength(12);
+      expect(tools).toHaveLength(15);
 
       const tidy = await client.callTool({
         name: 'tidy_markdown',

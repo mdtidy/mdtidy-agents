@@ -43,14 +43,17 @@ secret — never print or commit it.
 | Goal               | MCP tool               | REST                                      | Cost                |
 | ------------------ | ---------------------- | ----------------------------------------- | ------------------- |
 | **Save** (upsert)  | `save_document`        | composite                                 | 1 create / 0 update |
+| **Organize**       | `create_folder`        | `POST /api/v1/projects/{id}/folders`      | free                |
 | **Share** publicly | `share_project_public` | `POST /api/v1/projects/{id}/share/public` | 1                   |
 | **Export / clean** | `tidy_markdown`        | `POST /api/v1/convert`                    | 1 / render          |
 | **Check usage**    | `check_usage`          | `GET /api/v1/usage`                       | free                |
 
 `save_document` is the fast path for saving — it finds or creates the project and
-updates in place when a same-named doc already exists, so it never duplicates.
+updates in place when a same-named doc already exists, so it never duplicates. To
+file documents under a folder, `create_folder` (or find one via `get_project`),
+then pass its id as `folder_id` to `save_file` / `update_file`.
 
-For **every** operation — all 12 tools with their parameters, REST endpoints, and
+For **every** operation — all 15 tools with their parameters, REST endpoints, and
 credit costs — read **`references/operations.md`**.
 
 ## Behavior
