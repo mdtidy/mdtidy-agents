@@ -1,7 +1,15 @@
 import { checkUsage, getEntitlement, getFile, getProject, listProjects } from './tools/read';
 import { getProjectShare, shareProjectPublic } from './tools/share';
 import { tidyMarkdown } from './tools/tidy-markdown';
-import { createProject, saveDocument, saveFile, updateFile } from './tools/write';
+import {
+  createFolder,
+  createProject,
+  deleteFolder,
+  saveDocument,
+  saveFile,
+  updateFile,
+  updateFolder,
+} from './tools/write';
 import type { ToolDef } from './types';
 
 // The v1 curated tool surface (spec §3.4). Order = how they appear in
@@ -15,6 +23,9 @@ export const REGISTRY: ToolDef[] = [
   getProject,
   getFile,
   createProject,
+  createFolder,
+  updateFolder,
+  deleteFolder,
   saveDocument,
   saveFile,
   updateFile,

@@ -22,7 +22,7 @@ describe('session — stdio (npx @mdtidy/mcp)', () => {
 
       // tools/list — the full v1 surface.
       const { tools } = await client.listTools();
-      expect(tools).toHaveLength(12);
+      expect(tools).toHaveLength(15);
       const names = tools.map((t) => t.name);
       expect(names).toEqual(expect.arrayContaining(['tidy_markdown', 'save_document', 'get_file']));
 

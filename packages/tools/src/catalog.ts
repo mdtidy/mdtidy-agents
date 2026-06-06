@@ -81,6 +81,35 @@ export const TOOL_CATALOG: CatalogEntry[] = [
     description: 'Create a workspace project (a container for files). Free.',
   },
   {
+    name: 'create_folder',
+    group: 'Write',
+    operationId: 'createFolder',
+    cost: 0,
+    title: 'Create a folder',
+    description:
+      'Create a folder inside a project to organize files. Optionally nest it under a ' +
+      'parent folder. Returns the folder id — pass it as folder_id to save_file / ' +
+      'update_file. Free.',
+  },
+  {
+    name: 'update_folder',
+    group: 'Write',
+    operationId: 'updateFolder',
+    cost: 0,
+    title: 'Rename a folder',
+    description: 'Rename an existing folder. Free.',
+  },
+  {
+    name: 'delete_folder',
+    group: 'Write',
+    operationId: 'deleteFolder',
+    cost: 0,
+    title: 'Delete a folder',
+    description:
+      'Delete a folder. Returns 409 if it still holds active files (move or archive them ' +
+      'first); archived files fall back to the project root. Free.',
+  },
+  {
     name: 'save_document',
     group: 'Write',
     operationId: ['listProjects', 'createProject', 'getProject', 'createFile', 'updateFile'],
@@ -145,9 +174,6 @@ export const DEFERRED_TOOLS: { name: string; operationId: string }[] = [
   { name: 'delete_project', operationId: 'deleteProject' },
   { name: 'delete_file', operationId: 'deleteFile' },
   { name: 'copy_file', operationId: 'copyFile' },
-  { name: 'create_folder', operationId: 'createFolder' },
-  { name: 'update_folder', operationId: 'updateFolder' },
-  { name: 'delete_folder', operationId: 'deleteFolder' },
   { name: 'regenerate_public_link', operationId: 'regenerateProjectPublicLink' },
   { name: 'invite_viewers', operationId: 'inviteProjectViewers' },
   { name: 'remove_invitee', operationId: 'removeProjectInvitee' },
