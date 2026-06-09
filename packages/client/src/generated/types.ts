@@ -178,7 +178,7 @@ export interface paths {
         head?: never;
         /**
          * Autosave / rename / move / archive / restore a file
-         * @description Content writes REQUIRE `If-Match: "<version>"` (or a `version` body field). A stale precondition returns 409 with the current server copy. Content writes overwrite the working blob and bump the version; they do not create version-history rows. 0 credits.
+         * @description Content writes require an optimistic-lock precondition: send `version` in the request body (recommended). The `If-Match: "<version>"` header is also accepted, but callers behind a CDN should prefer `version` — `If-Match` is a reserved HTTP conditional header (RFC 9110 §13.1.1) that an intermediary may evaluate at the edge and answer with 412 even when the write succeeds. The origin itself never returns 412. A stale precondition returns 409 with the current server copy. Content writes overwrite the working blob and bump the version; they do not create version-history rows. 0 credits.
          */
         patch: operations["updateFile"];
         trace?: never;
@@ -542,13 +542,14 @@ export interface components {
             name: string;
             content: string;
         };
-        /** @description Autosave / rename / move / archive. Content writes require the `If-Match` header (or `version` field) and bump the file version. */
+        /** @description Autosave / rename / move / archive. Content writes require an optimistic-lock precondition — the `version` field (recommended) or the `If-Match` header — and bump the file version. */
         UpdateFileRequest: {
             content?: string;
             name?: string;
             /** Format: uuid */
             folder_id?: string | null;
             archived?: boolean;
+            /** @description Optimistic-lock precondition for content writes; recommended over the If-Match header (which a CDN may 412 at the edge). */
             version?: number;
         };
     };
@@ -658,6 +659,15 @@ export interface components {
         };
         /** @description A content write omitted the required If-Match / version precondition. */
         PreconditionRequired: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["ApiError"];
+            };
+        };
+        /** @description Edge-injected: a CDN evaluated the `If-Match` request header and rejected it (the origin never returns 412, and the write may have already committed). Use the `version` body field instead. */
+        PreconditionFailed: {
             headers: {
                 [name: string]: unknown;
             };
@@ -1063,6 +1073,7 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
+                /** @description Legacy optimistic-lock precondition (quoted version, e.g. `"3"`). Accepted, but prefer the `version` body field — a CDN may evaluate this reserved conditional header at the edge and return 412. */
                 "If-Match"?: string;
             };
             path: {
@@ -1089,6 +1100,7 @@ export interface operations {
             401: components["responses"]["InvalidApiKey"];
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
+            412: components["responses"]["PreconditionFailed"];
             413: components["responses"]["PayloadTooLarge"];
             422: components["responses"]["ValidationError"];
             428: components["responses"]["PreconditionRequired"];
