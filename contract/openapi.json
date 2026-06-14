@@ -759,7 +759,7 @@
       "UpdateFileRequest": {
         "type": "object",
         "additionalProperties": false,
-        "description": "Autosave / rename / move / archive. Content writes require the `If-Match` header (or `version` field) and bump the file version.",
+        "description": "Autosave / rename / move / archive. Content writes require an optimistic-lock precondition — the `version` field (recommended) or the `If-Match` header — and bump the file version.",
         "properties": {
           "content": {
             "type": "string",
@@ -780,7 +780,8 @@
           },
           "version": {
             "type": "integer",
-            "minimum": 1
+            "minimum": 1,
+            "description": "Optimistic-lock precondition for content writes; recommended over the If-Match header (which a CDN may 412 at the edge)."
           }
         }
       }
@@ -920,6 +921,16 @@
       },
       "PreconditionRequired": {
         "description": "A content write omitted the required If-Match / version precondition.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ApiError"
+            }
+          }
+        }
+      },
+      "PreconditionFailed": {
+        "description": "Edge-injected: a CDN evaluated the `If-Match` request header and rejected it (the origin never returns 412, and the write may have already committed). Use the `version` body field instead.",
         "content": {
           "application/json": {
             "schema": {
@@ -1627,7 +1638,7 @@
       },
       "patch": {
         "summary": "Autosave / rename / move / archive / restore a file",
-        "description": "Content writes REQUIRE `If-Match: \"<version>\"` (or a `version` body field). A stale precondition returns 409 with the current server copy. Content writes overwrite the working blob and bump the version; they do not create version-history rows. 0 credits.",
+        "description": "Content writes require an optimistic-lock precondition: send `version` in the request body (recommended). The `If-Match: \"<version>\"` header is also accepted, but callers behind a CDN should prefer `version` — `If-Match` is a reserved HTTP conditional header (RFC 9110 §13.1.1) that an intermediary may evaluate at the edge and answer with 412 even when the write succeeds. The origin itself never returns 412. A stale precondition returns 409 with the current server copy. Content writes overwrite the working blob and bump the version; they do not create version-history rows. 0 credits.",
         "operationId": "updateFile",
         "tags": [
           "workspace"
@@ -1642,6 +1653,7 @@
             "name": "If-Match",
             "in": "header",
             "required": false,
+            "description": "Legacy optimistic-lock precondition (quoted version, e.g. `\"3\"`). Accepted, but prefer the `version` body field — a CDN may evaluate this reserved conditional header at the edge and return 412.",
             "schema": {
               "type": "string"
             }
@@ -1683,6 +1695,9 @@
           },
           "409": {
             "$ref": "#/components/responses/Conflict"
+          },
+          "412": {
+            "$ref": "#/components/responses/PreconditionFailed"
           },
           "413": {
             "$ref": "#/components/responses/PayloadTooLarge"
