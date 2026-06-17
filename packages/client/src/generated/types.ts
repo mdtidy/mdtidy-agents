@@ -131,7 +131,10 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        /** Delete a folder (409 if it holds active files; archived files move to root) */
+        /**
+         * Delete a folder (409 if it holds active files; archived files move to root)
+         * @description By default a folder holding active files is refused with `409 folder_not_empty` and archived files inside move up to the parent. Pass `cascade=true` to permanently delete the entire subtree (files + subfolders, archived included) and sweep its objects.
+         */
         delete: operations["deleteFolder"];
         options?: never;
         head?: never;
@@ -932,7 +935,10 @@ export interface operations {
     };
     deleteFolder: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Hard-delete the whole subtree instead of refusing on active files. */
+                cascade?: boolean;
+            };
             header?: never;
             path: {
                 id: string;
